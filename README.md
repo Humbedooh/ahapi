@@ -1,5 +1,5 @@
 # ahapi
-Asynchronous HTTP API Server for Python
+Asynchronous HTTP API Server for Python 3.5+
 
 Allows you to spin up a simple JSON/formdata capable API server where each 
 file in the `api_dir` is an endpoint. formdata or JSON payloads to the API 
@@ -40,3 +40,10 @@ def register(state: typing.Any):
     return ahapi.endpoint(process)
 
 ~~~
+
+## Installing
+Use pip to install it, either via `requirements.txt` or via the CLI:
+~~~bash
+pip install ahapi
+~~~
+
