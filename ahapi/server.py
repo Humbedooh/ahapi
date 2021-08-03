@@ -30,7 +30,7 @@ import typing
 
 import ahapi.formdata
 
-__version__ = "0.1.4"
+__version__ = "0.1.5"
 
 
 class Endpoint:
@@ -114,9 +114,15 @@ class SimpleServer:
                 # but could be an exception (that needs a traceback) OR
                 # it could be a custom response, which we just pass along to the client.
                 output = await self.handlers[handler].exec(self.state, request, indata)
-                headers["content-type"] = "application/json"
                 if output and not isinstance(output, aiohttp.web.Response):
-                    jsout = json.dumps(output, indent=2)
+                    if isinstance(output, str):
+                        headers["content-type"] = "text/html"
+                        jsout = output
+                    elif isinstance(output, dict) or isinstance(output, list) or isinstance(output, tuple):
+                        headers["content-type"] = "application/json"
+                        jsout = json.dumps(output, indent=2)
+                    else:
+                        raise ValueError(f"Could not determine output type from API call to {handler}")
                     headers["Content-Length"] = str(len(jsout))
                     return aiohttp.web.Response(headers=headers, status=200, text=jsout)
                 elif isinstance(output, aiohttp.web.Response):
