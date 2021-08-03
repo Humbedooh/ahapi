@@ -29,7 +29,7 @@ import typing
 
 from . import formdata
 
-__version__ = "0.1.2"
+__version__ = "0.1.3"
 
 
 class Endpoint:
@@ -56,7 +56,7 @@ class SimpleServer:
                 spec.loader.exec_module(m)
                 endpoint_url = os.path.join(dir_relative, endpoint).strip("/")
                 if hasattr(m, "register"):
-                    self.handlers[endpoint_url] = m.__getattribute__("register")(self)
+                    self.handlers[endpoint_url] = m.__getattribute__("register")(self.state)
                     print(f"Registered endpoint /{endpoint_url}")
                 else:
                     print(f"Could not find entry point 'register()' in {endpoint_path}, skipping!")
