@@ -4,7 +4,7 @@ Asynchronous HTTP API Server for Python
 
 Main server example:
 ~~~python3
-import ahapi.server
+import ahapi
 
 httpserver = ahapi.simple(
     api_dir="/foo/bar/scripts", 
@@ -19,7 +19,7 @@ loop.run_until_complete(httpserver.loop())
 
 `/foo/bar/scripts/example.py`:
 ~~~python3
-import ahapi.server
+import ahapi
 import typing
 """ Generic endpoint reachable at http://localhost:8080/example"""
 
@@ -30,7 +30,7 @@ async def process(state: typing.Any, request, formdata: dict) -> dict:
     }
 
 
-def register(server: ahapi.server.Server):
-    return ahapi.server.Endpoint(process)
+def register(state: typing.Any):
+    return ahapi.endpoint(process)
 
 ~~~
