@@ -24,12 +24,13 @@ import os
 import sys
 import traceback
 
+import asyncio
 import aiohttp.web
 import typing
 
-from . import formdata
+import ahapi.formdata
 
-__version__ = "0.1.3"
+__version__ = "0.1.4"
 
 
 class Endpoint:
@@ -102,7 +103,7 @@ class SimpleServer:
 
         # Parse form/json data if any
         try:
-            indata = await formdata.parse_formdata(body_type, request)
+            indata = await ahapi.formdata.parse_formdata(body_type, request)
         except ValueError as e:
             return aiohttp.web.Response(headers=headers, status=400, text=str(e))
 
@@ -131,10 +132,14 @@ class SimpleServer:
         else:
             return aiohttp.web.Response(headers=headers, status=404, text="API Endpoint not found!")
 
-    async def loop(self):
+    async def loop(self, forever=True):
         self.server = aiohttp.web.Server(self.handle_request)
         runner = aiohttp.web.ServerRunner(self.server)
         await runner.setup()
         site = aiohttp.web.TCPSite(runner, self.bind_ip, self.bind_port)
         await site.start()
         print("==== HTTP API Server running on %s:%s ====" % (self.bind_ip, self.bind_port))
+        if forever:
+            while True:
+                await asyncio.sleep(100)
+
