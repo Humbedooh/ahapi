@@ -3,7 +3,7 @@ import typing
 """ Generic endpoint reachable at http://localhost:8080/example"""
 
 
-async def process(state: typing.Any, request, formdata: dict) -> dict:
+async def process(state: typing.Any, request, formdata: dict) -> typing.Union[dict, list, str]:
     if formdata.get("format") == "text":
         return "This is an example string"
     else:
