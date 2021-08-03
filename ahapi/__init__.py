@@ -1,5 +1,5 @@
-from . import server
+import ahapi.server
 
 # Shortcut to ahapi.server.SimpleServer etc
-simple = server.SimpleServer
-endpoint = server.Endpoint
+simple = ahapi.server.SimpleServer
+endpoint = ahapi.server.Endpoint
