@@ -30,8 +30,22 @@ import typing
 
 import ahapi.formdata
 
-__version__ = "0.1.6"
+__version__ = "0.1.7"
 
+KNOWN_TEXT_EXTENSIONS = {
+    "txt": "text/plain",
+    "html": "text/html",
+    "js": "application/javascript",
+    "css": "text/css",
+    "svg": "image/svg+xml",
+}
+
+KNOWN_BINARY_EXTENSIONS = {
+    "png": "image/png",
+    "gif": "image/gif",
+    "jpeg": "image/jpeg",
+    "jpg": "image/jpg",
+}
 
 class Endpoint:
     """API end-point function"""
@@ -66,7 +80,12 @@ class SimpleServer:
                 self.load_api_dir(endpoint_path)
 
     def __init__(
-        self, api_dir: str = "endpoints", static_dir: typing.Optional[str] = None, bind_ip: str = "127.0.0.1", bind_port: int = 8080, state: typing.Any = None
+        self,
+        api_dir: str = "endpoints",
+        static_dir: typing.Optional[str] = None,
+        bind_ip: str = "127.0.0.1",
+        bind_port: int = 8080,
+        state: typing.Any = None,
     ):
         print("==== Starting HTTP API server... ====")
         self.state = state
@@ -111,7 +130,7 @@ class SimpleServer:
         # Calc request path if for a static file
         static_file_path = None
         if self.static_dir:
-            static_file_path = os.path.join(self.static_dir, request.path[1:].replace('..', ''))
+            static_file_path = os.path.join(self.static_dir, request.path[1:].replace("..", ""))
             if static_file_path.endswith("/"):
                 static_file_path += "index.html"
         # Find a handler, or 404
@@ -146,13 +165,14 @@ class SimpleServer:
         # Static file handler?
         elif self.static_dir and os.path.isfile(static_file_path):
             ext = static_file_path.split(".")[-1]
-            if ext in ("txt", "html", "js", "css"):  # We are sure these are text files
-                content_type = {"txt": "plain", "html": "html", "js": "javascript", "css": "css"}[ext]
+            if ext in KNOWN_TEXT_EXTENSIONS:  # We are sure these are text files
+                content_type = KNOWN_TEXT_EXTENSIONS[ext]
                 f = open(static_file_path, "r").read()
-                return aiohttp.web.Response(headers=headers, status=200, content_type=f"text/{content_type}", body=f)
-            else:  # We don't know this file type, assume binary
+                return aiohttp.web.Response(headers=headers, status=200, content_type=content_type, body=f)
+            else:  # Binary file? Probably
                 f = open(static_file_path, "rb").read()
-                return aiohttp.web.Response(headers=headers, status=200, content_type=f"application/binary", body=f)
+                content_type = KNOWN_BINARY_EXTENSIONS.get(ext, "application/binary")
+                return aiohttp.web.Response(headers=headers, status=200, content_type=content_type, body=f)
 
         # File or handler not found?
         else:
@@ -168,4 +188,3 @@ class SimpleServer:
         if forever:
             while True:
                 await asyncio.sleep(100)
-
