@@ -30,7 +30,8 @@ import typing
 
 import ahapi.formdata
 
-__version__ = "0.1.7"
+__version__ = "0.1.8"
+
 
 KNOWN_TEXT_EXTENSIONS = {
     "txt": "text/plain",
@@ -86,6 +87,7 @@ class SimpleServer:
         bind_ip: str = "127.0.0.1",
         bind_port: int = 8080,
         state: typing.Any = None,
+        max_upload: int = ahapi.formdata.AHAPI_MAX_PAYLOAD,
     ):
         print("==== Starting HTTP API server... ====")
         self.state = state
@@ -95,6 +97,7 @@ class SimpleServer:
         self.bind_port = bind_port
         self.api_root = api_dir
         self.static_dir = static_dir
+        self.max_upload = max_upload
 
         # Load each URL endpoint
         self.load_api_dir(api_dir)
@@ -123,7 +126,7 @@ class SimpleServer:
 
         # Parse form/json data if any
         try:
-            indata = await ahapi.formdata.parse_formdata(body_type, request)
+            indata = await ahapi.formdata.parse_formdata(body_type, request, max_upload=self.max_upload)
         except ValueError as e:
             return aiohttp.web.Response(headers=headers, status=400, text=str(e))
 
