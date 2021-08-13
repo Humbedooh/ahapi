@@ -28,7 +28,7 @@ import multipart
 AHAPI_MAX_PAYLOAD = 256 * 1024
 
 
-async def parse_formdata(body_type, request: aiohttp.web.BaseRequest) -> dict:
+async def parse_formdata(body_type, request: aiohttp.web.BaseRequest, max_upload: int = AHAPI_MAX_PAYLOAD) -> dict:
     form_as_dict = {}
     for key, val in urllib.parse.parse_qsl(request.query_string):
         form_as_dict[key] = val
@@ -36,8 +36,8 @@ async def parse_formdata(body_type, request: aiohttp.web.BaseRequest) -> dict:
     if request.method in ["PUT", "POST"]:
         if request.can_read_body:
             try:
-                if request.content_length and request.content_length > AHAPI_MAX_PAYLOAD:
-                    raise ValueError("Form data payload too large, max 256kb allowed")
+                if request.content_length and request.content_length > max_upload:
+                    raise ValueError("Form data payload too large, max %u bytes." % max_upload)
                 body = await request.text()
                 if body_type == "json":
                     try:
