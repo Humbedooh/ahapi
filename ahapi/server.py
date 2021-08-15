@@ -22,7 +22,9 @@ import importlib.util
 import json
 import os
 import sys
+import time
 import traceback
+import base64
 
 import asyncio
 import aiohttp.web
@@ -30,7 +32,7 @@ import typing
 
 import ahapi.formdata
 
-__version__ = "0.1.8"
+__version__ = "0.1.10"
 
 
 KNOWN_TEXT_EXTENSIONS = {
@@ -47,6 +49,8 @@ KNOWN_BINARY_EXTENSIONS = {
     "jpeg": "image/jpeg",
     "jpg": "image/jpg",
 }
+
+ETAGS = {}
 
 class Endpoint:
     """API end-point function"""
@@ -167,6 +171,16 @@ class SimpleServer:
 
         # Static file handler?
         elif self.static_dir and os.path.isfile(static_file_path):
+            # Simple cache support - etag or l-m verification:
+            fstat = os.stat(static_file_path)
+            last_modified = time.strftime("%a, %d %b %Y %H:%M:%S GMT", time.gmtime(fstat.st_mtime))
+            etag = base64.b64encode(b"%f-%u" % (fstat.st_mtime, fstat.st_size)).decode('ascii')
+            if request.headers.get("if-none-match", "") == etag:
+                return aiohttp.web.Response(headers=headers, status=304)
+            if request.headers.get("if-modified-since", "") == last_modified:
+                return aiohttp.web.Response(headers=headers, status=304)
+            headers["Last-Modified"] = last_modified
+            headers["etag"] = etag
             ext = static_file_path.split(".")[-1]
             if ext in KNOWN_TEXT_EXTENSIONS:  # We are sure these are text files
                 content_type = KNOWN_TEXT_EXTENSIONS[ext]
