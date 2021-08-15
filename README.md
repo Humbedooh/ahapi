@@ -64,3 +64,5 @@ httpserver = ahapi.simple(
 loop = asyncio.get_event_loop()
 loop.run_until_complete(httpserver.loop())
 ~~~
+
+Static content supports caching via eTag or Last-Modified.
