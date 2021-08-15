@@ -33,7 +33,7 @@ async def parse_formdata(body_type, request: aiohttp.web.BaseRequest, max_upload
     for key, val in urllib.parse.parse_qsl(request.query_string):
         form_as_dict[key] = val
     # PUT/POST form data?
-    if request.method in ["PUT", "POST"]:
+    if request.method not in ["GET", "HEAD"]:
         if request.can_read_body:
             try:
                 if request.content_length and request.content_length > max_upload:
