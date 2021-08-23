@@ -32,7 +32,7 @@ import typing
 
 import ahapi.formdata
 
-__version__ = "0.1.10"
+__version__ = "0.1.12"
 
 
 KNOWN_TEXT_EXTENSIONS = {
@@ -147,7 +147,7 @@ class SimpleServer:
                 # but could be an exception (that needs a traceback) OR
                 # it could be a custom response, which we just pass along to the client.
                 output = await self.handlers[handler].exec(self.state, request, indata)
-                if output and not isinstance(output, aiohttp.web.Response):
+                if output is not None and not isinstance(output, aiohttp.web.Response):
                     if isinstance(output, str):
                         headers["content-type"] = "text/html"
                         jsout = output
