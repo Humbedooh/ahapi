@@ -34,6 +34,9 @@ async def parse_formdata(body_type, request: aiohttp.web.BaseRequest, max_upload
         form_as_dict[key] = val
     # PUT/POST form data?
     if request.method not in ["GET", "HEAD"]:
+        # Default max is 1MB, if we want larger, we're gonna have to tweak internals.
+        if max_upload and max_upload > request._client_max_size:
+            request._client_max_size = max_upload
         if request.can_read_body:
             try:
                 if request.content_length and request.content_length > max_upload:
