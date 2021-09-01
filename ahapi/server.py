@@ -32,7 +32,7 @@ import typing
 
 import ahapi.formdata
 
-__version__ = "0.1.12"
+__version__ = "0.1.13"
 
 
 KNOWN_TEXT_EXTENSIONS = {
@@ -50,7 +50,6 @@ KNOWN_BINARY_EXTENSIONS = {
     "jpg": "image/jpg",
 }
 
-ETAGS = {}
 
 class Endpoint:
     """API end-point function"""
@@ -95,13 +94,14 @@ class SimpleServer:
     ):
         print("==== Starting HTTP API server... ====")
         self.state = state
-        self.handlers = {}
+        self.handlers: typing.Dict[str, Endpoint] = {}
         self.server = None
         self.bind_ip = bind_ip
         self.bind_port = bind_port
         self.api_root = api_dir
         self.static_dir = static_dir
         self.max_upload = max_upload
+        self.pending_headers: typing.Dict[int, dict] = {}
 
         # Load each URL endpoint
         self.load_api_dir(api_dir)
@@ -146,6 +146,7 @@ class SimpleServer:
                 # Wait for endpoint response. This is typically JSON in case of success,
                 # but could be an exception (that needs a traceback) OR
                 # it could be a custom response, which we just pass along to the client.
+                hid = id(request)
                 output = await self.handlers[handler].exec(self.state, request, indata)
                 if output is not None and not isinstance(output, aiohttp.web.Response):
                     if isinstance(output, str):
@@ -157,6 +158,9 @@ class SimpleServer:
                     else:
                         raise ValueError(f"Could not determine output type from API call to {handler}")
                     headers["Content-Length"] = str(len(jsout))
+                    if hid in self.pending_headers:
+                        headers.update(**self.pending_headers[hid])
+                        del self.pending_headers[hid]
                     return aiohttp.web.Response(headers=headers, status=200, text=jsout)
                 elif isinstance(output, aiohttp.web.Response):
                     return output
@@ -165,12 +169,14 @@ class SimpleServer:
             # If a handler hit an exception, we need to print that exception somewhere,
             # either to the web client or stderr:
             except:  # This is a broad exception on purpose!
+                if hid in self.pending_headers:  # clear pending headers if we crashed here...
+                    del self.pending_headers[hid]
                 exc_type, exc_value, exc_traceback = sys.exc_info()
                 err = "\n".join(traceback.format_exception(exc_type, exc_value, exc_traceback))
                 return aiohttp.web.Response(headers=headers, status=500, text="API error occurred: \n" + err)
 
         # Static file handler?
-        elif self.static_dir and os.path.isfile(static_file_path):
+        elif self.static_dir and static_file_path and os.path.isfile(static_file_path):
             # Simple cache support - etag or l-m verification:
             fstat = os.stat(static_file_path)
             last_modified = time.strftime("%a, %d %b %Y %H:%M:%S GMT", time.gmtime(fstat.st_mtime))
@@ -184,12 +190,12 @@ class SimpleServer:
             ext = static_file_path.split(".")[-1]
             if ext in KNOWN_TEXT_EXTENSIONS:  # We are sure these are text files
                 content_type = KNOWN_TEXT_EXTENSIONS[ext]
-                f = open(static_file_path, "r").read()
-                return aiohttp.web.Response(headers=headers, status=200, content_type=content_type, body=f)
+                txt_content = open(static_file_path, "r").read()
+                return aiohttp.web.Response(headers=headers, status=200, content_type=content_type, body=txt_content)
             else:  # Binary file? Probably
-                f = open(static_file_path, "rb").read()
+                binary_content = open(static_file_path, "rb").read()
                 content_type = KNOWN_BINARY_EXTENSIONS.get(ext, "application/binary")
-                return aiohttp.web.Response(headers=headers, status=200, content_type=content_type, body=f)
+                return aiohttp.web.Response(headers=headers, status=200, content_type=content_type, body=binary_content)
 
         # File or handler not found?
         else:
