@@ -47,7 +47,7 @@ KNOWN_BINARY_EXTENSIONS = {
     "png": "image/png",
     "gif": "image/gif",
     "jpeg": "image/jpeg",
-    "jpg": "image/jpg",
+    "jpg": "image/jpeg",
 }
 
 
