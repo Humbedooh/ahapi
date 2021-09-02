@@ -45,6 +45,10 @@ class CookieSession:
 
 class CookieFactory:
     def __init__(self, server: ahapi.server.SimpleServer, cookie_name: str = "ahapi", expiry: int = 86400 * 7):
+        """
+        Creates a CookieFactory, responsible for managing cookie-based sessions with arbitrary state objects.
+        A session can have any object associated with it (class, dict, list, string etc).
+        """
         self.name: str = cookie_name
         self.server = server
         self.expiry: int = expiry
@@ -52,6 +56,7 @@ class CookieFactory:
         self.last_prune = time.time()
 
     def prune(self):
+        """Prunes the session list, removing stale cookies and their associated states"""
         now = time.time()
         # Prune at most every hour and only if we have a large enough quantity of session objects
         if self.last_prune < (now - 3600) and len(self.sessions) > MIN_PRUNE_SIZE:
