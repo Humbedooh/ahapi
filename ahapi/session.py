@@ -90,13 +90,16 @@ class CookieFactory:
         If the cookie could not be found, or if it is too old, None is returned instead and the cookie deleted.
         """
         session_id = None
-        for cookie_header in request.headers.getall("cookie"):
-            cookies: http.cookies.SimpleCookie = http.cookies.SimpleCookie(cookie_header)
-            if self.name in cookies:
-                # Must be hex chars only
-                if all(c in "abcdefg1234567890-" for c in cookies["boxer"].value):
-                    session_id = cookies["boxer"].value
-                break
+        try:
+            for cookie_header in request.headers.getall("cookie"):
+                cookies: http.cookies.SimpleCookie = http.cookies.SimpleCookie(cookie_header)
+                if self.name in cookies:
+                    # Must be hex chars only
+                    if all(c in "abcdefg1234567890-" for c in cookies[self.name].value):
+                        session_id = cookies[self.name].value
+                    break
+        except KeyError:  # no cookie headers at all
+            pass
         if session_id and session_id in self.sessions:
             session: CookieSession = self.sessions[session_id]
             now = time.time()
