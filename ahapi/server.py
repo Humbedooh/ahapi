@@ -32,7 +32,7 @@ import typing
 
 import ahapi.formdata
 
-__version__ = "0.1.13"
+__version__ = "0.1.16"
 
 
 KNOWN_TEXT_EXTENSIONS = {
@@ -140,6 +140,8 @@ class SimpleServer:
             static_file_path = os.path.join(self.static_dir, request.path[1:].replace("..", ""))
             if static_file_path.endswith("/"):
                 static_file_path += "index.html"
+            if not os.path.realpath(static_file_path).startswith(os.path.realpath(self.static_dir)):
+                return aiohttp.web.Response(headers=headers, status=403, text=f"File {static_file_path} not authorized!")
         # Find a handler, or 404
         if handler in self.handlers:
             try:
