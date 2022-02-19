@@ -32,7 +32,7 @@ import typing
 
 import ahapi.formdata
 
-__version__ = "0.1.16"
+__version__ = "0.1.17"
 
 
 KNOWN_TEXT_EXTENSIONS = {
@@ -67,7 +67,7 @@ class SimpleServer:
         dir_relative = dirname.replace(self.api_root, "", 1)
         for endpoint_file in os.listdir(dirname):
             endpoint_path = os.path.join(dirname, endpoint_file)
-            if endpoint_file.endswith(".py"):
+            if endpoint_file.endswith(".py") and not endpoint_file.startswith("__"):  # .py files, but not __init__.py etc.
                 endpoint = endpoint_file[:-3]
                 modname = ".".join(dir_relative.split("/"))
                 spec = importlib.util.spec_from_file_location(f"{modname}.{endpoint}", endpoint_path)
