@@ -29,10 +29,11 @@ import signal
 import asyncio
 import aiohttp.web
 import typing
+import uuid
 
 import ahapi.formdata
 
-__version__ = "0.1.17"
+__version__ = "0.1.18"
 
 
 KNOWN_TEXT_EXTENSIONS = {
@@ -91,6 +92,8 @@ class SimpleServer:
         bind_port: int = 8080,
         state: typing.Any = None,
         max_upload: int = ahapi.formdata.AHAPI_MAX_PAYLOAD,
+        log_stdout = False,
+        log_web = True,
     ):
         print("==== Starting HTTP API server... ====")
         self.state = state
@@ -102,6 +105,8 @@ class SimpleServer:
         self.static_dir = static_dir
         self.max_upload = max_upload
         self.pending_headers: typing.Dict[int, dict] = {}
+        self.log_stdout: bool = log_stdout
+        self.log_web: bool = log_web
 
         # Load each URL endpoint
         self.load_api_dir(api_dir)
@@ -175,7 +180,19 @@ class SimpleServer:
                     del self.pending_headers[hid]
                 exc_type, exc_value, exc_traceback = sys.exc_info()
                 err = "\n".join(traceback.format_exception(exc_type, exc_value, exc_traceback))
-                return aiohttp.web.Response(headers=headers, status=500, text="API error occurred: \n" + err)
+                error_id = ""
+                if self.log_stdout:
+                    error_id = uuid.uuid4()
+                    for line in traceback.format_exception(exc_type, exc_value, exc_traceback):
+                        print(f"[{error_id}] {line}")
+                if self.log_web:
+                    return aiohttp.web.Response(headers=headers, status=500, text="API error occurred: \n" + err)
+                else:
+                    if error_id:
+                        error_code = f"API error occurred! See the log output for more information. Error log ID: {error_id}"
+                    else:
+                        error_code = f"API error occurred!"
+                    return aiohttp.web.Response(headers=headers, status=500, text=error_code)
 
         # Static file handler?
         elif self.static_dir and static_file_path and os.path.isfile(static_file_path):
