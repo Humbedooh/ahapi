@@ -114,3 +114,22 @@ async def process(state: typing.Any, request, formdata: dict) -> dict:
 
 def register(state: typing.Any):
     return ahapi.endpoint(process)
+~~~
+
+## Error logging
+Upon encountering errors, by default, stack traces will be provided to the client.
+Traces can be set to either output to the client, stdout (for internal logging), both, or no tracing:
+
+~~~python3
+httpserver = ahapi.simple(
+    api_dir="/foo/bar/scripts",    # serve api end points from here
+    static_dir="/foo/bar/htdocs",  # serve stuff like html and images from here
+    bind_ip="127.0.0.1", 
+    bind_port="8080", 
+    log_stdout=True,  # Send stack traces to stdout
+    log_web=False,    # Do not log stacks to client. Since stdout is True, this will log an error id matching the stdout traces
+    )
+~~~
+
+If web logging is disabled but stdout is enabled, an error ID will be shown to the client that matches the stdout trace.
+This error ID can then be used to locate the stack trace from stdout.
