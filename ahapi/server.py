@@ -25,7 +25,7 @@ import sys
 import time
 import traceback
 import base64
-
+import signal
 import asyncio
 import aiohttp.web
 import typing
@@ -67,7 +67,7 @@ class SimpleServer:
         dir_relative = dirname.replace(self.api_root, "", 1)
         for endpoint_file in os.listdir(dirname):
             endpoint_path = os.path.join(dirname, endpoint_file)
-            if endpoint_file.endswith(".py") and not endpoint_file.startswith("__"):  # .py files, but not __init__.py etc.
+            if endpoint_file.endswith(".py") and os.path.isfile(endpoint_path) and endpoint_file != "__init__.py":
                 endpoint = endpoint_file[:-3]
                 modname = ".".join(dir_relative.split("/"))
                 spec = importlib.util.spec_from_file_location(f"{modname}.{endpoint}", endpoint_path)
@@ -95,7 +95,7 @@ class SimpleServer:
         print("==== Starting HTTP API server... ====")
         self.state = state
         self.handlers: typing.Dict[str, Endpoint] = {}
-        self.server = None
+        self.server: typing.Optional[aiohttp.web.Server] = None
         self.bind_ip = bind_ip
         self.bind_port = bind_port
         self.api_root = api_dir
@@ -203,12 +203,20 @@ class SimpleServer:
         else:
             return aiohttp.web.Response(headers=headers, status=404, text="API Endpoint not found!")
 
-    async def loop(self, forever=True):
+    def sighup(self):
+        print("Stopping AHAPI...")
+        # TODO: More shutdown here?
+        raise aiohttp.web.GracefulExit
+
+    async def loop(self, main_loop=None, forever=True):
         self.server = aiohttp.web.Server(self.handle_request)
-        runner = aiohttp.web.ServerRunner(self.server)
+        runner = aiohttp.web.ServerRunner(self.server, handle_signals=True)
         await runner.setup()
         site = aiohttp.web.TCPSite(runner, self.bind_ip, self.bind_port)
         await site.start()
+        if main_loop is None:  # Assume main event loop if none supplied, for signal handling
+            main_loop = asyncio.get_event_loop()
+        main_loop.add_signal_handler(signal.SIGHUP, self.sighup)
         print("==== HTTP API Server running on %s:%s ====" % (self.bind_ip, self.bind_port))
         if forever:
             while True:
