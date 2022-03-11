@@ -104,7 +104,7 @@ import typing
 async def process(state: typing.Any, request, formdata: dict) -> dict:
     cookie = state["cookies"].get(request)  # Fetches a valid session or None if not found
     if not cookie:
-        cookie = state["cookies"].make()  # generate a new cookie, will automatically be sent to client
+        cookie = state["cookies"].make(request, state)  # generate a new cookie, will automatically be sent to client
         cookie.state = f"Hi, person with cookie ID {cookie.cookie}"  # cookie.state can be any type of object
     return {
         "some": "json_response",
