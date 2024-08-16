@@ -234,7 +234,7 @@ class SimpleServer:
         if main_loop is None:  # Assume main event loop if none supplied, for signal handling
             main_loop = asyncio.get_event_loop()
         main_loop.add_signal_handler(signal.SIGHUP, self.sighup)
-        print("==== HTTP API Server running on %s:%s ====" % (self.bind_ip, self.bind_port))
+        print("==== HTTP API Server running on http://%s:%s ====" % (self.bind_ip, self.bind_port))
         if forever:
             while True:
                 await asyncio.sleep(100)
